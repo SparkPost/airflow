@@ -23,7 +23,7 @@ try:
     from kubernetes.client.rest import ApiException
     from kubernetes.client.api_client import ApiClient
     from kubernetes.client import Configuration
-    from airflow.kubernetes.refresh_config import (  # pylint: disable=ungrouped-imports
+    from airflow.contrib.kubernetes.refresh_config import (  # pylint: disable=ungrouped-imports
         load_kube_config,
         RefreshConfiguration,
     )
@@ -92,6 +92,6 @@ def get_kube_client(in_cluster: bool = conf.getboolean('kubernetes', 'in_cluster
             cluster_context = conf.get('kubernetes', 'cluster_context', fallback=None)
         if config_file is None:
             config_file = conf.get('kubernetes', 'config_file', fallback=None)
-            
+
     client_conf = _get_kube_config(in_cluster, cluster_context, config_file)
     return _get_client_with_patched_configuration(client_conf)
