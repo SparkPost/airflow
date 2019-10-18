@@ -186,7 +186,7 @@ elasticsearch = [
     'elasticsearch>=5.0.0,<6.0.0',
     'elasticsearch-dsl>=5.0.0,<6.0.0'
 ]
-emr = ['boto3>=1.0.0, <1.8.0']
+emr = ['boto3>=1.0.0]
 gcp = [
     'google-api-python-client>=1.6.0, <2.0.0dev',
     'google-auth-httplib2>=0.0.1',
@@ -240,7 +240,7 @@ postgres = ['psycopg2>=2.7.4,<2.8']
 qds = ['qds-sdk>=1.10.4']
 rabbitmq = ['librabbitmq>=1.6.1']
 redis = ['redis~=3.2']
-s3 = ['boto3>=1.7.0, <1.8.0']
+s3 = ['boto3>=1.7.0]
 salesforce = ['simple-salesforce>=0.72']
 samba = ['pysmbclient>=0.1.3']
 segment = ['analytics-python>=1.2.9']
