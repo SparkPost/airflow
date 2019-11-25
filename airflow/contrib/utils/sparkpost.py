@@ -29,6 +29,8 @@ import os
 from sparkpost import SparkPost
 from sparkpost.exceptions import SparkPostAPIException
 
+from bs4 import BeautifulSoup
+
 from airflow.utils.email import get_email_address_list
 from airflow.utils.log.logging_mixin import LoggingMixin
 
@@ -65,8 +67,8 @@ def send_email(to, subject, html_content, files=None,
     if bcc:
         bcc = get_email_address_list(bcc)
 
+    # Add email attachments
     attachment_list = []
-    # Add email attachment.
     for fname in files or []:
         basename = os.path.basename(fname)
         with open(fname, "rb") as f:
@@ -77,9 +79,25 @@ def send_email(to, subject, html_content, files=None,
                 data=attachment_data,
                 type=attachment_type,
                 name=attachment_name,
-
             )
             attachment_list.append(attachment)
+
+    # Finds and remove inline png images. Attach as inline_images
+    image_list = []
+    doc = BeautifulSoup(html_content)
+    for img_number, img in enumerate(doc.find_all("img")):
+        src = img["src"]
+        if "data:image/png;base64" in src:
+            img_encoded = src.replace("data:image/png;base64,", "").strip()
+            img_name = "image_{}".format(img_number)
+            image_list.append(
+                dict(type='image/png',
+                     name=img_name,
+                     data=img_encoded)
+            )
+            img["src"] = "cid:{}".format(img_name)
+
+    html_content = doc.prettify("utf-8").decode("utf-8")
 
     try:
         result = mail.transmission.send(recipients=to,
@@ -89,7 +107,9 @@ def send_email(to, subject, html_content, files=None,
                                         subject=subject,
                                         from_email=from_email_name,
                                         return_path=from_email,
-                                        attachments=attachment_list
+                                        attachments=attachment_list,
+                                        inline_images=image_list,
+                                        inline_css=True
                                         )
         log.info('Email with subject {} and transmission_id {} successfully sent to recipients: {}'.format(subject,
                                                                                                            result["id"],
