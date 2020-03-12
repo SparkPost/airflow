@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -35,6 +34,7 @@ class FileTaskHandler(logging.Handler):
     task instance logs. It creates and delegates log handling
     to `logging.FileHandler` after receiving task instance context.
     It reads logs from task instance's host machine.
+
     :param base_log_folder: Base log folder to place logs.
     :param filename_template: template filename string
     """
@@ -52,7 +52,7 @@ class FileTaskHandler(logging.Handler):
         :param ti: task instance object
         """
         local_loc = self._init_file(ti)
-        self.handler = logging.FileHandler(local_loc)
+        self.handler = logging.FileHandler(local_loc, encoding='utf-8')
         if self.formatter:
             self.handler.setFormatter(self.formatter)
         self.handler.setLevel(self.level)
@@ -84,6 +84,7 @@ class FileTaskHandler(logging.Handler):
         """
         Template method that contains custom logic of reading
         logs given the try_number.
+
         :param ti: task instance record
         :param try_number: current try_number to read log from
         :param metadata: log metadata,
@@ -123,6 +124,7 @@ class FileTaskHandler(logging.Handler):
                     pass
 
                 response = requests.get(url, timeout=timeout)
+                response.encoding = "utf-8"
 
                 # Check if the resource was properly fetched
                 response.raise_for_status()
@@ -136,6 +138,7 @@ class FileTaskHandler(logging.Handler):
     def read(self, task_instance, try_number=None, metadata=None):
         """
         Read logs of given task instance from local machine.
+
         :param task_instance: task instance object
         :param try_number: task instance try_number to read logs from. If None
                            it returns all logs separated by try_number
@@ -171,6 +174,7 @@ class FileTaskHandler(logging.Handler):
     def _init_file(self, ti):
         """
         Create log directory and give it correct permissions.
+
         :param ti: task instance object
         :return: relative log path of the given task instance
         """

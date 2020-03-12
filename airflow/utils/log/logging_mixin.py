@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -19,8 +18,7 @@
 import logging
 import re
 import sys
-from contextlib import contextmanager
-from logging import Handler, StreamHandler
+from logging import Handler, Logger, StreamHandler
 
 # 7-bit C1 ANSI escape sequences
 ANSI_ESCAPE = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
@@ -42,11 +40,15 @@ class LoggingMixin:
         self._set_context(context)
 
     @property
-    def log(self):
+    def log(self) -> Logger:
+        """
+        Returns a logger.
+        """
         try:
-            return self._log
+            # FIXME: LoggingMixin should have a default _log field.
+            return self._log  # type: ignore
         except AttributeError:
-            self._log = logging.root.getChild(
+            self._log = logging.getLogger(
                 self.__class__.__module__ + '.' + self.__class__.__name__
             )
             return self._log
@@ -58,11 +60,11 @@ class LoggingMixin:
 
 # TODO: Formally inherit from io.IOBase
 class StreamLogWriter:
-    encoding = False
-
     """
     Allows to redirect stdout and stderr to logger
     """
+    encoding: None = None
+
     def __init__(self, logger, level):
         """
         :param log: The log level method to write to, ie. log.debug, log.warning
@@ -91,6 +93,7 @@ class StreamLogWriter:
     def write(self, message):
         """
         Do whatever it takes to actually log the specified logging record
+
         :param message: message to log
         """
         if not message.endswith("\n"):
@@ -132,39 +135,23 @@ class RedirectStdHandler(StreamHandler):
             self._use_stderr = False
 
         # StreamHandler tries to set self.stream
-        Handler.__init__(self)
+        Handler.__init__(self)  # pylint: disable=non-parent-init-called
 
     @property
     def stream(self):
+        """
+        Returns current stream.
+        """
         if self._use_stderr:
             return sys.stderr
 
         return sys.stdout
 
 
-@contextmanager
-def redirect_stdout(logger, level):
-    writer = StreamLogWriter(logger, level)
-    try:
-        sys.stdout = writer
-        yield
-    finally:
-        sys.stdout = sys.__stdout__
-
-
-@contextmanager
-def redirect_stderr(logger, level):
-    writer = StreamLogWriter(logger, level)
-    try:
-        sys.stderr = writer
-        yield
-    finally:
-        sys.stderr = sys.__stderr__
-
-
 def set_context(logger, value):
     """
     Walks the tree of loggers and tries to set the context for each handler
+
     :param logger: logger
     :param value: value to set
     """

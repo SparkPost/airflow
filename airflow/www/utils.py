@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -37,7 +36,7 @@ from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 
 from airflow.configuration import conf
-from airflow.models import BaseOperator
+from airflow.models.baseoperator import BaseOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from airflow.utils import timezone
 from airflow.utils.json import AirflowJsonEncoder
@@ -98,18 +97,13 @@ def generate_pages(current_page, num_of_pages,
     This component takes into account custom parameters such as search and showPaused,
     which could be added to the pages link in order to maintain the state between
     client and server. It also allows to make a bookmark on a specific paging state.
-    :param current_page:
-        the current page number, 0-indexed
-    :param num_of_pages:
-        the total number of pages
-    :param search:
-        the search query string, if any
-    :param showPaused:
-        false if paused dags will be hidden, otherwise true to show them
-    :param window:
-        the number of pages to be shown in the paging component (7 default)
-    :return:
-        the HTML string of the paging component
+
+    :param current_page: the current page number, 0-indexed
+    :param num_of_pages: the total number of pages
+    :param search: the search query string, if any
+    :param showPaused: false if paused dags will be hidden, otherwise true to show them
+    :param window: the number of pages to be shown in the paging component (7 default)
+    :return: the HTML string of the paging component
     """
 
     void_link = 'javascript:void(0)'
@@ -357,8 +351,7 @@ def get_attr_renderer():
         'doc_rst': lambda x: render(x, lexers.RstLexer),
         'doc_yaml': lambda x: render(x, lexers.YamlLexer),
         'doc_md': wrapped_markdown,
-        'python_callable': lambda x: render(
-            inspect.getsource(x) if x is not None else None, lexers.PythonLexer),
+        'python_callable': lambda x: render(get_python_source(x), lexers.PythonLexer),
     }
 
 
@@ -395,6 +388,10 @@ def get_python_source(x: Any) -> Optional[str]:
     """
     if isinstance(x, str):
         return x
+
+    if x is None:
+        return None
+
     source_code = None
 
     if isinstance(x, functools.partial):
@@ -473,9 +470,12 @@ class CustomSQLAInterface(SQLAInterface):
 
     def is_utcdatetime(self, col_name):
         from airflow.utils.sqlalchemy import UtcDateTime
-        obj = self.list_columns[col_name].type
-        return isinstance(obj, UtcDateTime) or \
-            isinstance(obj, sqla.types.TypeDecorator) and \
-            isinstance(obj.impl, UtcDateTime)
+
+        if col_name in self.list_columns:
+            obj = self.list_columns[col_name].type
+            return isinstance(obj, UtcDateTime) or \
+                isinstance(obj, sqla.types.TypeDecorator) and \
+                isinstance(obj.impl, UtcDateTime)
+        return False
 
     filter_converter_class = UtcAwareFilterConverter
